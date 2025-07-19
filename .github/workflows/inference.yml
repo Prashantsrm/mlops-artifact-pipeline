@@ -1,0 +1,80 @@
+name: 🔁 Inference Workflow
+
+on:
+  push:
+    branches: [ inference ]
+  pull_request:
+    branches: [ inference ]
+
+jobs:
+  test:
+    name: 🧪 Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: pytest -q
+
+  train:
+    name: 🏋️ Train Model
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Train model
+        run: python src/train.py
+
+      - name: Upload model artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trained-model
+          path: model_train.pkl
+
+  inference:
+    name: 🤖 Run Inference
+    runs-on: ubuntu-latest
+    needs: train
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Download model artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: trained-model
+          path: .
+
+      - name: Run inference
+        run: python src/inference.py
+
