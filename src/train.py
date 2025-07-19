@@ -1,57 +1,36 @@
 import json
-import os
+import pickle
 from sklearn.datasets import load_digits
 from sklearn.linear_model import LogisticRegression
-import joblib
 
+def load_config(path="config/config.json"):
+    with open(path, "r") as f:
+        return json.load(f)
 
-def load_config(config_path: str) -> dict:
-    """
-    Load hyperparameters from a JSON config file.
-
-    Expected JSON keys:
-      - "C" (float): inverse regularization strength
-      - "solver" (str): optimization algorithm
-      - "max_iter" (int): maximum number of iterations
-    """
-    with open(config_path, "r") as f:
-        cfg = json.load(f)
-    return cfg
-
-
-def train_model(X, y, cfg: dict) -> LogisticRegression:
-    """
-    Train a LogisticRegression model on (X, y) using parameters in cfg.
-    """
+def train_model(X, y, config):
     model = LogisticRegression(
-        C=cfg["C"],
-        solver=cfg["solver"],
-        max_iter=cfg["max_iter"],
+        C=config["C"],
+        solver=config["solver"],
+        max_iter=config["max_iter"]
     )
     model.fit(X, y)
     return model
 
-
-def main():
-    # 1. Load hyperparameters
-    # Assuming you're running this from the repo root:
-    #   python src/train.py
-    config_path = os.path.join("config", "config.json")
-    cfg = load_config(config_path)
-
-    # 2. Load the digits dataset
+if __name__ == "__main__":
+    # Load data and config
     digits = load_digits()
     X, y = digits.data, digits.target
+    config = load_config()
+    model = train_model(X, y, config)
 
-    # 3. Train the model
-    model = train_model(X, y, cfg)
+    # SAVE YOUR MODEL HERE:
+    with open("model_train.pkl", "wb") as f:
+        pickle.dump(model, f)
 
-    # 4. Save the trained model
-    output_path = "model_train.pkl"
-    joblib.dump(model, output_path)
-    print(f"Model saved to {output_path}")
-
-
-if __name__ == "__main__":
-    main()
+    # (Optional: print metrics for assignment)
+    from sklearn.metrics import accuracy_score, f1_score, log_loss
+    y_pred = model.predict(X)
+    print("Accuracy:", accuracy_score(y, y_pred))
+    print("F1 Score:", f1_score(y, y_pred, average="macro"))
+    print("Log Loss:", log_loss(y, model.predict_proba(X)))
 
